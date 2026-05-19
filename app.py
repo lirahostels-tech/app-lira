@@ -17,6 +17,15 @@ SCOPES = [
     "https://www.googleapis.com/auth/drive"
 ]
 
+TIPOS_ACOMODACAO = [
+    "Quarto com ventilador + Banheiro Compartilhado",
+    "Quarto com Ar-condicionado + Banheiro Privativo",
+    "Quarto Compartilhado Masculino",
+    "Quarto Compartilhado Feminino"
+    "Quarto Família",
+    "Quarto Solteiro"
+]
+
 
 def tela_login():
     st.title("🔐 Login — Lira Hostel")
@@ -106,16 +115,7 @@ st.subheader("➕ Adicionar nova reserva")
 with st.form("form_reserva"):
     data = st.date_input("Data do Check-in", value=date.today())
 
-    tipo = st.selectbox(
-        "Tipo de acomodação",
-        [
-            "Quarto com ventilador + Banheiro Compartilhado",
-            "Quarto com Ar-condicionado + Banheiro Privativo",
-            "Quarto Compartilhado",
-            "Quarto Família",
-            "Quarto Solteiro"
-        ]
-    )
+    tipo = st.selectbox("Tipo de acomodação", TIPOS_ACOMODACAO)
 
     hospede = st.text_input("Nome do hóspede")
     pessoas = st.number_input("Quantidade de pessoas", min_value=1, step=1)
@@ -172,6 +172,7 @@ col3.metric("Total de Diárias", total_diarias)
 
 st.divider()
 
+
 reservas_por_data = df.groupby("Check-in").size().reset_index(name="Reservas")
 
 st.subheader("📅 Quantidade de Reservas por Check-in")
@@ -194,6 +195,7 @@ st.bar_chart(
 
 st.divider()
 
+
 st.subheader("📋 Reservas")
 
 df_visual = df.copy()
@@ -202,3 +204,116 @@ df_visual["Check-in"] = df_visual["Check-in"].dt.strftime("%d/%m/%Y")
 df_visual["Check-out"] = df_visual["Check-out"].dt.strftime("%d/%m/%Y")
 
 st.dataframe(df_visual, use_container_width=True)
+
+
+st.divider()
+
+st.subheader("✏️ Editar ou apagar reserva")
+
+df_edicao = df.copy()
+df_edicao["Linha"] = df_edicao.index + 2
+
+df_edicao["Reserva"] = (
+    df_edicao["Linha"].astype(str)
+    + " | "
+    + df_edicao["Data"].dt.strftime("%d/%m/%Y")
+    + " | "
+    + df_edicao["Hóspede"].astype(str)
+    + " | "
+    + df_edicao["Tipo"].astype(str)
+)
+
+reserva_selecionada = st.selectbox(
+    "Selecione a reserva",
+    df_edicao["Reserva"].tolist()
+)
+
+linha_planilha = int(reserva_selecionada.split(" | ")[0])
+
+reserva_atual = df_edicao[df_edicao["Linha"] == linha_planilha].iloc[0]
+
+acao = st.radio(
+    "O que deseja fazer?",
+    ["Editar reserva", "Apagar reserva"],
+    horizontal=True
+)
+
+if acao == "Editar reserva":
+    with st.form("form_editar_reserva"):
+        nova_data = st.date_input(
+            "Nova data do Check-in",
+            value=reserva_atual["Data"].date()
+        )
+
+        index_tipo = (
+            TIPOS_ACOMODACAO.index(reserva_atual["Tipo"])
+            if reserva_atual["Tipo"] in TIPOS_ACOMODACAO
+            else 0
+        )
+
+        novo_tipo = st.selectbox(
+            "Novo tipo de acomodação",
+            TIPOS_ACOMODACAO,
+            index=index_tipo
+        )
+
+        novo_hospede = st.text_input(
+            "Nome do hóspede",
+            value=str(reserva_atual["Hóspede"])
+        )
+
+        novas_pessoas = st.number_input(
+            "Quantidade de pessoas",
+            min_value=1,
+            step=1,
+            value=int(reserva_atual["Pessoas"])
+        )
+
+        novas_diarias = st.number_input(
+            "Quantidade de diárias",
+            min_value=1,
+            step=1,
+            value=int(reserva_atual["Diárias"])
+        )
+
+        nova_observacao = st.text_area(
+            "Observações",
+            value=str(reserva_atual["Observações"])
+        )
+
+        salvar_edicao = st.form_submit_button("Salvar alterações")
+
+        if salvar_edicao:
+            if not novo_hospede.strip():
+                st.error("Preencha o nome do hóspede.")
+            else:
+                if not re.search(r"(\d+)\s*di[áa]ria", nova_observacao.lower()):
+                    nova_observacao = f"{nova_observacao.strip()} | {novas_diarias} Diárias"
+
+                worksheet.update(
+                    f"A{linha_planilha}:E{linha_planilha}",
+                    [[
+                        nova_data.strftime("%d/%m/%Y"),
+                        novo_tipo,
+                        novo_hospede.strip(),
+                        int(novas_pessoas),
+                        nova_observacao.strip()
+                    ]]
+                )
+
+                st.success("Reserva editada com sucesso!")
+                st.rerun()
+
+
+if acao == "Apagar reserva":
+    st.warning("Essa ação irá apagar a reserva da planilha.")
+
+    confirmar = st.checkbox("Confirmo que quero apagar esta reserva")
+
+    if st.button("Apagar reserva"):
+        if confirmar:
+            worksheet.delete_rows(linha_planilha)
+            st.success("Reserva apagada com sucesso!")
+            st.rerun()
+        else:
+            st.error("Marque a confirmação antes de apagar.")
