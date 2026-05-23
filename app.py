@@ -22,6 +22,7 @@ TIPOS_ACOMODACAO = [
     "Quarto Compartilhado Masculino",
     "Quarto Compartilhado Feminino",
     "Quarto Família",
+    "Quarto Solteiro"
 ]
 
 
@@ -446,21 +447,29 @@ with aba_dashboard:
             df_filtrado.groupby("Tipo")
             .size()
             .reset_index(name="Reservas")
-            .sort_values("Reservas", ascending=False)
+            .sort_values("Reservas", ascending=True)
         )
 
         fig_reservas = px.bar(
             reservas_por_quarto,
-            x="Tipo",
-            y="Reservas",
+            x="Reservas",
+            y="Tipo",
             color="Tipo",
-            text="Reservas"
+            text="Reservas",
+            orientation="h"
+        )
+
+        fig_reservas.update_traces(
+            textposition="outside",
+            textfont_size=14
         )
 
         fig_reservas.update_layout(
-            xaxis_title="Quarto",
-            yaxis_title="Reservas",
-            showlegend=False
+            height=420,
+            xaxis_title="Quantidade de reservas",
+            yaxis_title="",
+            showlegend=False,
+            margin=dict(l=20, r=40, t=20, b=20)
         )
 
         st.plotly_chart(fig_reservas, use_container_width=True)
@@ -472,21 +481,29 @@ with aba_dashboard:
             df_filtrado.groupby("Tipo")["Pessoas"]
             .sum()
             .reset_index()
-            .sort_values("Pessoas", ascending=False)
+            .sort_values("Pessoas", ascending=True)
         )
 
         fig_pessoas = px.bar(
             pessoas_por_quarto,
-            x="Tipo",
-            y="Pessoas",
+            x="Pessoas",
+            y="Tipo",
             color="Tipo",
-            text="Pessoas"
+            text="Pessoas",
+            orientation="h"
+        )
+
+        fig_pessoas.update_traces(
+            textposition="outside",
+            textfont_size=14
         )
 
         fig_pessoas.update_layout(
-            xaxis_title="Quarto",
-            yaxis_title="Pessoas",
-            showlegend=False
+            height=420,
+            xaxis_title="Quantidade de pessoas",
+            yaxis_title="",
+            showlegend=False,
+            margin=dict(l=20, r=40, t=20, b=20)
         )
 
         st.plotly_chart(fig_pessoas, use_container_width=True)
@@ -507,13 +524,26 @@ with aba_dashboard:
         y="Reservas",
         color="Tipo",
         text="Reservas",
-        barmode="group"
+        barmode="stack"
+    )
+
+    fig_reservas_dia.update_traces(
+        textposition="inside",
+        textfont_size=12
     )
 
     fig_reservas_dia.update_layout(
+        height=480,
         xaxis_title="Data",
         yaxis_title="Reservas",
-        legend_title="Quarto"
+        legend_title="Tipo de quarto",
+        bargap=0.25,
+        margin=dict(l=20, r=20, t=30, b=20)
+    )
+
+    fig_reservas_dia.update_xaxes(
+        tickformat="%d/%m",
+        tickangle=-45
     )
 
     st.plotly_chart(fig_reservas_dia, use_container_width=True)
@@ -532,13 +562,26 @@ with aba_dashboard:
         y="Pessoas",
         color="Tipo",
         text="Pessoas",
-        barmode="group"
+        barmode="stack"
+    )
+
+    fig_pessoas_dia.update_traces(
+        textposition="inside",
+        textfont_size=12
     )
 
     fig_pessoas_dia.update_layout(
+        height=480,
         xaxis_title="Data",
         yaxis_title="Pessoas",
-        legend_title="Quarto"
+        legend_title="Tipo de quarto",
+        bargap=0.25,
+        margin=dict(l=20, r=20, t=30, b=20)
+    )
+
+    fig_pessoas_dia.update_xaxes(
+        tickformat="%d/%m",
+        tickangle=-45
     )
 
     st.plotly_chart(fig_pessoas_dia, use_container_width=True)
