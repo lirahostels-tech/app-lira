@@ -21,8 +21,7 @@ TIPOS_ACOMODACAO = [
     "Quarto com Ar-condicionado + Banheiro Privativo",
     "Quarto Compartilhado Masculino",
     "Quarto Compartilhado Feminino",
-    "Quarto Família",
-    "Quarto Solteiro"
+    
 ]
 
 
